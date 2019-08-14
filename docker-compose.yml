@@ -1,0 +1,76 @@
+# Docker compose build and run for dev
+version: '2'
+services:
+
+  nginx:
+    build:
+      context: nginx
+    ports:
+      - "${NGINX_PUBLIC_HTTP}:80"
+      - "${NGINX_PUBLIC_HTTPS}:443"
+    links: 
+      - rails
+      - seven
+    networks:
+      - sandbox
+  
+  rails:
+    build:
+      context: rails
+    volumes:
+      - ./rails:/app
+    links:
+      - mongo
+      - redis
+    mem_limit: 200m
+    networks:
+      - sandbox
+
+  seven:
+    build:
+      context: seven
+    volumes:
+      - ./seven:/app
+    links:
+      - mongo
+    mem_limit: 200m
+    networks:
+      - sandbox
+
+  mongo:
+    image: mongo:3.4
+    volumes:
+      - dbvolume:/data/db:rw
+    networks:
+      - sandbox
+    ports:
+      - "27017:27017"
+    command: mongod --auth
+
+  redis: # redis database
+    image: redis:3.2
+    networks:
+      - sandbox
+    ports:
+      - "6399:6379"
+    
+  sidekiq: # background processing
+    build: 
+      context: rails
+      dockerfile: config/containers/sidekiq/Dockerfile
+    links: 
+      - mongo
+      - redis
+    volumes:
+      - ./rails:/app
+    networks:
+      - sandbox
+    env_file: .env
+    
+volumes:
+  dbvolume:
+    driver: local
+    
+networks:
+  sandbox:
+    driver: bridge

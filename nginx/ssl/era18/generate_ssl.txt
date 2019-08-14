@@ -1,0 +1,3 @@
+openssl req -new -newkey rsa:2048 -nodes -keyout era18.key -out era18.csr
+
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout dev.era18.key -out dev.era18.crt
